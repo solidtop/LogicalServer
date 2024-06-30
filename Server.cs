@@ -1,14 +1,16 @@
-﻿using LogicalServer.Hubs;
+﻿using LogicalServer.Common.Exceptions;
+using LogicalServer.Hubs;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
 namespace LogicalServer
 {
-    public class Server(HubClientStore clientStore, HubManager hubManager, ILogger<Server> logger)
+    public class Server(HubClientStore clientStore, HubManager hubManager, IExceptionHandler exceptionHandler, ILogger<Server> logger)
     {
         private readonly HubClientStore _clientStore = clientStore;
         private readonly HubManager _hubManager = hubManager;
+        private readonly IExceptionHandler _exceptionHandler = exceptionHandler;
         private readonly ILogger<Server> _logger = logger;
         private TcpListener? _listener;
 
@@ -64,8 +66,11 @@ namespace LogicalServer
 
                     string incomingMessage = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
                     var message = MessageProcesser.Process(incomingMessage);
-                    var hubClient =
-                    _ = _hubManager.RouteMessageAsync(message, client);
+
+                    await _exceptionHandler.InvokeAsync(client.Stream, async () =>
+                    {
+                        await _hubManager.RouteMessageAsync(message, client);
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -81,6 +86,7 @@ namespace LogicalServer
         {
             var client = _clientStore.AddClient(tcpClient);
             _hubManager.OnConnectedAsync();
+            NotifyClient(client);
             _logger.LogInformation("Client connected");
 
             return client;
@@ -92,6 +98,16 @@ namespace LogicalServer
             _clientStore.RemoveClient(clientId);
             _hubManager.OnDisconnectedAsync(clientId, ex);
             _logger.LogInformation("Client disconnected");
+        }
+
+        private static Task NotifyClient(HubClient client)
+        {
+            var message = new HubMessage("/", "on_connected", []);
+            var messageStr = MessageProcesser.Process(message);
+            var buffer = Encoding.UTF8.GetBytes(messageStr);
+            client.Stream.WriteAsync(buffer, 0, buffer.Length);
+
+            return Task.CompletedTask;
         }
     }
 }

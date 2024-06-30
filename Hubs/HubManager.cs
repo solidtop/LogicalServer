@@ -10,7 +10,12 @@ namespace LogicalServer.Hubs
         private readonly ILogger<HubManager> _logger;
         private readonly Dictionary<string, Hub> _hubs = [];
 
-        public HubManager(HubClientStore clientStore, SessionManager sessionManager, IEnumerable<Hub> hubs, ILogger<HubManager> logger)
+        public HubManager(
+            HubClientStore clientStore,
+            SessionManager sessionManager,
+            IEnumerable<Hub> hubs,
+            ILogger<HubManager> logger
+            )
         {
             _clientStore = clientStore;
             _sessionManager = sessionManager;
@@ -27,6 +32,7 @@ namespace LogicalServer.Hubs
         {
             foreach (var hub in _hubs.Values)
             {
+
                 if (hub.Route.Equals(message.Route, StringComparison.OrdinalIgnoreCase))
                 {
                     hub.Context = new HubContext(client.Id);
@@ -36,7 +42,7 @@ namespace LogicalServer.Hubs
                 }
             }
 
-            _logger.LogError("Route not found: {route}", message.Route);
+            throw new RouteNotFoundException(message.Route);
         }
 
         public Task OnConnectedAsync()
@@ -58,8 +64,12 @@ namespace LogicalServer.Hubs
                 hub.OnDisconnectedAsync(ex);
             });
 
-            var session = _sessionManager.FindSession(clientId) ?? throw new SessionNotFoundException();
-            _sessionManager.RemoveFromSessionAsync(clientId, session.Id);
+            var session = _sessionManager.FindSession(clientId);
+
+            if (session != null)
+            {
+                _sessionManager.RemoveFromSessionAsync(clientId, session.Id);
+            }
 
             return Task.CompletedTask;
         }

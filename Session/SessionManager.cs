@@ -48,9 +48,16 @@ namespace LogicalServer.Session
             return Task.CompletedTask;
         }
 
-        public Session FindSession(string clientId)
+        public Session? FindSession(string clientId)
         {
-            return _sessions.First(session => session.Value.ClientIds.Contains(clientId)).Value;
+            try
+            {
+                return _sessions.First(session => session.Value.ClientIds.Contains(clientId)).Value;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public IDictionary<string, HubClient> GetClientsInSession(string sessionId)

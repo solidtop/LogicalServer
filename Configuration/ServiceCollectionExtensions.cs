@@ -1,4 +1,5 @@
-﻿using LogicalServer.Hubs;
+﻿using LogicalServer.Common.Exceptions;
+using LogicalServer.Hubs;
 using LogicalServer.Session;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -13,6 +14,7 @@ namespace LogicalServer.Configuration
             services.TryAddSingleton<HubManager>();
             services.TryAddSingleton<HubClientStore>();
             services.TryAddSingleton<SessionManager>();
+            services.TryAddSingleton<IExceptionHandler, ExceptionHandler>();
 
             return services;
         }

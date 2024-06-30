@@ -1,4 +1,5 @@
-﻿using LogicalServer.Session;
+﻿using LogicalServer.Common.Exceptions;
+using LogicalServer.Session;
 using System.Reflection;
 
 namespace LogicalServer.Hubs
@@ -16,7 +17,7 @@ namespace LogicalServer.Hubs
         public async Task Invoke(string methodName, object?[] data)
         {
             BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Instance;
-            var method = GetType().GetMethod(methodName, bindingAttr) ?? throw new MissingMethodException($"Method {methodName} not found");
+            var method = GetType().GetMethod(methodName, bindingAttr) ?? throw new MethodNotFoundException(methodName);
             var parameters = method.GetParameters();
 
             var args = parameters.Select((param, i) => Convert.ChangeType(data[i], param.ParameterType)).ToArray();

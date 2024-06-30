@@ -9,30 +9,31 @@ namespace LogicalServer
     {
         public static HubMessage Process(string message)
         {
-            DefaultContractResolver contractResolver = new()
-            {
-                NamingStrategy = new SnakeCaseNamingStrategy()
-            };
-
-            return JsonConvert.DeserializeObject<HubMessage>(message, new JsonSerializerSettings
-            {
-                ContractResolver = contractResolver,
-                Formatting = Formatting.Indented,
-            }) ?? throw new InvalidMessageException();
+            return JsonConvert.DeserializeObject<HubMessage>(message, GetSerializerSettings()) ?? throw new InvalidMessageException();
         }
 
         public static string Process(HubMessage message)
+        {
+            return JsonConvert.SerializeObject(message, GetSerializerSettings()) ?? throw new InvalidMessageException();
+        }
+
+        public static string Process(HubError error)
+        {
+            return JsonConvert.SerializeObject(error, GetSerializerSettings()) ?? throw new InvalidMessageException();
+        }
+
+        private static JsonSerializerSettings GetSerializerSettings()
         {
             DefaultContractResolver contractResolver = new()
             {
                 NamingStrategy = new SnakeCaseNamingStrategy()
             };
 
-            return JsonConvert.SerializeObject(message, new JsonSerializerSettings
+            return new JsonSerializerSettings
             {
                 ContractResolver = contractResolver,
                 Formatting = Formatting.Indented,
-            }) ?? throw new InvalidMessageException();
+            };
         }
     }
 }

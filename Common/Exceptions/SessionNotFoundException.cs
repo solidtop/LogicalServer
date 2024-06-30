@@ -1,6 +1,6 @@
 ﻿namespace LogicalServer.Common.Exceptions
 {
-    public class SessionNotFoundException : Exception
+    public class SessionNotFoundException : NotFoundException
     {
 
         public SessionNotFoundException() : base("Session not found") { }
