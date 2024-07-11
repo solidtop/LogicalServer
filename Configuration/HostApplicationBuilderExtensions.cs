@@ -9,12 +9,9 @@ namespace LogicalServer.Configuration
         {
             builder.Services.AddSingleton<Hub, T>(provider =>
             {
-                var logger = provider.GetRequiredService<ILogger<T>>();
-                var sessionManager = provider.GetRequiredService<SessionManager>();
-
-                var hub = Activator.CreateInstance(typeof(T), [logger]) as T ?? throw new NullReferenceException("Hub not found");
+                var hub = ActivatorUtilities.CreateInstance<T>(provider);
                 hub.Route = route;
-                hub.Sessions = sessionManager;
+                hub.Sessions = provider.GetRequiredService<SessionManager>();
 
                 return hub;
             });
