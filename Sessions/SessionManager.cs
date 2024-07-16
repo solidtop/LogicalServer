@@ -58,10 +58,5 @@ namespace LogicalServer.Sessions
 
             throw new SessionNotFoundException(sessionId);
         }
-
-        public Session? FindSession(string clientId)
-        {
-            return _sessionStore.Sessions.FirstOrDefault(session => session.Value.ClientIds.Contains(clientId)).Value;
-        }
     }
 }
