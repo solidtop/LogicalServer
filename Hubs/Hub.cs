@@ -1,5 +1,5 @@
 ﻿using LogicalServer.Common.Exceptions;
-using LogicalServer.Session;
+using LogicalServer.Sessions;
 using System.Reflection;
 
 namespace LogicalServer.Hubs

@@ -1,5 +1,5 @@
 ﻿using LogicalServer.Hubs;
-using LogicalServer.Session;
+using LogicalServer.Sessions;
 
 namespace LogicalServer.Configuration
 {

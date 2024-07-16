@@ -1,5 +1,5 @@
 ﻿using LogicalServer.Common.Exceptions;
-using LogicalServer.Session;
+using LogicalServer.Sessions;
 
 namespace LogicalServer.Hubs
 {
@@ -7,19 +7,16 @@ namespace LogicalServer.Hubs
     {
         private readonly HubClientStore _clientStore;
         private readonly SessionManager _sessionManager;
-        private readonly ILogger<HubManager> _logger;
         private readonly Dictionary<string, Hub> _hubs = [];
 
         public HubManager(
             HubClientStore clientStore,
             SessionManager sessionManager,
-            IEnumerable<Hub> hubs,
-            ILogger<HubManager> logger
+            IEnumerable<Hub> hubs
             )
         {
             _clientStore = clientStore;
             _sessionManager = sessionManager;
-            _logger = logger;
 
             foreach (var hub in hubs)
             {
@@ -63,13 +60,6 @@ namespace LogicalServer.Hubs
                 hub.Clients = new HubClients(_clientStore, hub.Route, _sessionManager);
                 hub.OnDisconnectedAsync(ex);
             });
-
-            var session = _sessionManager.FindSession(clientId);
-
-            if (session != null)
-            {
-                _sessionManager.RemoveFromSessionAsync(clientId, session.Id);
-            }
 
             return Task.CompletedTask;
         }

@@ -46,6 +46,7 @@ namespace LogicalServer
             }
 
             _listener.Stop();
+            _logger.LogInformation("Server stopped listening");
         }
 
         private async Task HandleClientAsync(TcpClient tcpClient, CancellationToken stoppingToken)
@@ -65,7 +66,7 @@ namespace LogicalServer
                     }
 
                     string incomingMessage = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
-                    var message = MessageProcesser.Process(incomingMessage);
+                    var message = HubMessageParser.Parse(incomingMessage);
 
                     await _exceptionHandler.InvokeAsync(client.Stream, async () =>
                     {
@@ -103,7 +104,7 @@ namespace LogicalServer
         private static Task NotifyClient(HubClient client)
         {
             var message = new HubMessage("/", "on_connected", []);
-            var messageStr = MessageProcesser.Process(message);
+            var messageStr = HubMessageParser.Parse(message);
             var buffer = Encoding.UTF8.GetBytes(messageStr);
             client.Stream.WriteAsync(buffer, 0, buffer.Length);
 

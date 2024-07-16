@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-LogicalServer-4230acc2-3752-439e-8b32-996f8e7f2e9e</UserSecretsId>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <RootNamespace>LogicalServer</RootNamespace>
   </PropertyGroup>
 

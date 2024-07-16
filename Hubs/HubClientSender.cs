@@ -2,9 +2,9 @@
 
 namespace LogicalServer.Hubs
 {
-    public class HubClientSender(IDictionary<string, HubClient> clients, string route)
+    public class HubClientSender(IReadOnlyDictionary<string, HubClient> clients, string route)
     {
-        private readonly IDictionary<string, HubClient> _clients = clients;
+        private readonly IReadOnlyDictionary<string, HubClient> _clients = clients;
         private readonly string _route = route;
 
         private Task SendAsync(string methodName, object?[] data)
@@ -12,7 +12,7 @@ namespace LogicalServer.Hubs
             ArgumentNullException.ThrowIfNull(methodName, nameof(methodName));
 
             var message = new HubMessage(_route, methodName, data);
-            var messageStr = MessageProcesser.Process(message);
+            var messageStr = HubMessageParser.Parse(message);
             var buffer = Encoding.UTF8.GetBytes(messageStr);
 
             foreach (var client in _clients.Values)

@@ -28,6 +28,6 @@ namespace LogicalServer.Hubs
             _clients.TryRemove(clientId, out _);
         }
 
-        public IDictionary<string, HubClient> Clients => _clients;
+        public IReadOnlyDictionary<string, HubClient> Clients => _clients;
     }
 }

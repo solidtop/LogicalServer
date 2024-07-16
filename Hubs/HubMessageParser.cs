@@ -1,23 +1,22 @@
 ﻿using LogicalServer.Common.Exceptions;
-using LogicalServer.Hubs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace LogicalServer
+namespace LogicalServer.Hubs
 {
-    public class MessageProcesser
+    internal class HubMessageParser
     {
-        public static HubMessage Process(string message)
+        public static HubMessage Parse(string message)
         {
             return JsonConvert.DeserializeObject<HubMessage>(message, GetSerializerSettings()) ?? throw new InvalidMessageException();
         }
 
-        public static string Process(HubMessage message)
+        public static string Parse(HubMessage message)
         {
             return JsonConvert.SerializeObject(message, GetSerializerSettings()) ?? throw new InvalidMessageException();
         }
 
-        public static string Process(HubError error)
+        public static string Parse(HubError error)
         {
             return JsonConvert.SerializeObject(error, GetSerializerSettings()) ?? throw new InvalidMessageException();
         }

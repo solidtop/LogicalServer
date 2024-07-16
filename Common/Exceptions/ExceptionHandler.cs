@@ -36,7 +36,7 @@ namespace LogicalServer.Common.Exceptions
             _logger.LogInformation(exception.Message);
 
             var hubError = new HubError(error, message, timestamp);
-            var errorStr = MessageProcesser.Process(hubError);
+            var errorStr = HubMessageParser.Parse(hubError);
             var buffer = Encoding.UTF8.GetBytes(errorStr);
             await stream.WriteAsync(buffer);
 
