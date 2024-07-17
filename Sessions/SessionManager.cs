@@ -1,12 +1,14 @@
 ﻿using LogicalServer.Common.Exceptions;
 using LogicalServer.Hubs;
+using Microsoft.Extensions.Options;
 
 namespace LogicalServer.Sessions
 {
-    public class SessionManager(SessionStore sessionStore, HubClientStore clientStore, ILogger<SessionManager> logger)
+    public class SessionManager(SessionStore sessionStore, HubClientStore clientStore, IOptions<SessionOptions> options, ILogger<SessionManager> logger)
     {
         private readonly SessionStore _sessionStore = sessionStore;
         private readonly HubClientStore _clientStore = clientStore;
+        private readonly IOptions<SessionOptions> _options = options;
         private readonly ILogger<SessionManager> _logger = logger;
 
         public Task AddToSessionAsync(string clientId, string sessionId, CancellationToken cancellationToken = default)
@@ -17,10 +19,14 @@ namespace LogicalServer.Sessions
 
             lock (session)
             {
+                if (session.ClientIds.Count >= _options.Value.MaxClients)
+                {
+                    _logger.LogWarning("Cannot add client {clientId} to session {sessionId}: Maximum number of clients reached", clientId, sessionId);
+                    return Task.CompletedTask;
+                }
+
                 session.ClientIds.Add(clientId);
             }
-
-            _logger.LogInformation("Client added to session {sessionId}", sessionId);
 
             return Task.CompletedTask;
         }
@@ -37,11 +43,8 @@ namespace LogicalServer.Sessions
                     if (session.ClientIds.Count == 0)
                     {
                         _sessionStore.RemoveSession(sessionId);
-                        _logger.LogInformation("Session {sessionId} removed", sessionId);
                     }
                 }
-
-                _logger.LogInformation("Client removed from session {sessionId}", sessionId);
             }
 
             return Task.CompletedTask;

@@ -13,10 +13,10 @@ namespace LogicalServer.Configuration
 
             services.AddHostedService<Worker>();
             services.TryAddSingleton<Server>();
-            services.TryAddSingleton<HubManager>();
             services.TryAddSingleton<HubClientStore>();
-            services.TryAddSingleton<SessionManager>();
+            services.TryAddSingleton<HubManager>();
             services.TryAddSingleton<SessionStore>();
+            services.TryAddSingleton<SessionManager>();
             services.TryAddSingleton<IExceptionHandler, ExceptionHandler>();
 
             return services;
@@ -27,6 +27,14 @@ namespace LogicalServer.Configuration
             ArgumentNullException.ThrowIfNull(services);
 
             services.Configure<ServerOptions>(configuration.GetSection(nameof(ServerOptions)));
+            return services;
+        }
+
+        public static IServiceCollection AddSessionOptions(this IServiceCollection services, IConfiguration configuration)
+        {
+            ArgumentNullException.ThrowIfNull(services);
+
+            services.Configure<SessionOptions>(configuration.GetSection(nameof(SessionOptions)));
             return services;
         }
 

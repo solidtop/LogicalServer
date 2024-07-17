@@ -8,14 +8,15 @@ namespace LogicalServer.Sessions
 
         public Session AddSession()
         {
-            var session = Session.Create();
-            _sessions.TryAdd(session.Id, session);
+            string sessionId = Guid.NewGuid().ToString();
+            var session = new Session(sessionId);
+            _sessions.TryAdd(sessionId, session);
             return session;
         }
 
         public Session GetOrAddSession(string sessionId)
         {
-            return _sessions.GetOrAdd(sessionId, id => Session.Create(id));
+            return _sessions.GetOrAdd(sessionId, id => new Session(sessionId));
         }
 
         public void RemoveSession(string sessionId)
@@ -24,7 +25,6 @@ namespace LogicalServer.Sessions
         }
 
         public IReadOnlyDictionary<string, Session> Sessions { get { return _sessions; } }
-
         public Session GetSession(string sessionId) => _sessions[sessionId];
         public bool SessionExists(string sessionId) => _sessions.TryGetValue(sessionId, out _);
     }

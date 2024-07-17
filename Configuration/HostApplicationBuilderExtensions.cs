@@ -5,11 +5,11 @@ namespace LogicalServer.Configuration
 {
     public static class HostApplicationBuilderExtensions
     {
-        public static HostApplicationBuilder MapHub<T>(this HostApplicationBuilder builder, string route) where T : Hub
+        public static HostApplicationBuilder MapHub<THub>(this HostApplicationBuilder builder, string route) where THub : Hub
         {
-            builder.Services.AddSingleton<Hub, T>(provider =>
+            builder.Services.AddSingleton<Hub, THub>(provider =>
             {
-                var hub = ActivatorUtilities.CreateInstance<T>(provider);
+                var hub = ActivatorUtilities.CreateInstance<THub>(provider);
                 hub.Route = route;
                 hub.Sessions = provider.GetRequiredService<SessionManager>();
 

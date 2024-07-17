@@ -1,22 +1,15 @@
 ﻿using LogicalServer.Common.Exceptions;
-using LogicalServer.Sessions;
 
 namespace LogicalServer.Hubs
 {
     public class HubManager
     {
-        private readonly HubClientStore _clientStore;
-        private readonly SessionManager _sessionManager;
+        private readonly IServiceProvider _serviceProvider;
         private readonly Dictionary<string, Hub> _hubs = [];
 
-        public HubManager(
-            HubClientStore clientStore,
-            SessionManager sessionManager,
-            IEnumerable<Hub> hubs
-            )
+        public HubManager(IServiceProvider serviceProvider, IEnumerable<Hub> hubs)
         {
-            _clientStore = clientStore;
-            _sessionManager = sessionManager;
+            _serviceProvider = serviceProvider;
 
             foreach (var hub in hubs)
             {
@@ -42,11 +35,12 @@ namespace LogicalServer.Hubs
             throw new RouteNotFoundException(message.Route);
         }
 
-        public Task OnConnectedAsync()
+        public Task OnConnectedAsync(string clientId)
         {
             _hubs.Values.ToList().ForEach(hub =>
             {
-                hub.Clients = new HubClients(_clientStore, hub.Route, _sessionManager);
+                hub.Context = new HubContext(clientId);
+                hub.Clients = ActivatorUtilities.CreateInstance<HubClients>(_serviceProvider, hub.Route);
                 hub.OnConnectedAsync();
             });
 
@@ -57,7 +51,8 @@ namespace LogicalServer.Hubs
         {
             _hubs.Values.ToList().ForEach(hub =>
             {
-                hub.Clients = new HubClients(_clientStore, hub.Route, _sessionManager);
+                hub.Context = new HubContext(clientId);
+                hub.Clients = ActivatorUtilities.CreateInstance<HubClients>(_serviceProvider, hub.Route);
                 hub.OnDisconnectedAsync(ex);
             });
 

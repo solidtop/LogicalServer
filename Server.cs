@@ -46,7 +46,7 @@ namespace LogicalServer
             }
 
             _listener.Stop();
-            _logger.LogInformation("Server stopped listening");
+            _logger.LogCritical("Server stopped listening");
         }
 
         private async Task HandleClientAsync(TcpClient tcpClient, CancellationToken stoppingToken)
@@ -86,7 +86,7 @@ namespace LogicalServer
         private HubClient ConnectClient(TcpClient tcpClient)
         {
             var client = _clientStore.AddClient(tcpClient);
-            _hubManager.OnConnectedAsync();
+            _hubManager.OnConnectedAsync(client.Id);
             NotifyClient(client);
             _logger.LogInformation("Client connected");
 
