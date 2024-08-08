@@ -4,7 +4,7 @@
     {
         private readonly HubManager<THub> _hubManager = hubManager;
 
-        public Task SendAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
+        public Task SendCoreAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
         {
             return _hubManager.SendAllAsync(methodName, args, cancellationToken);
         }
@@ -15,7 +15,7 @@
         private readonly HubManager<THub> _hubManager = hubManager;
         private readonly IReadOnlyList<string> _excludedConnectionIds = excludedConnectionIds;
 
-        public Task SendAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
+        public Task SendCoreAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
         {
             return _hubManager.SendAllExceptAsync(methodName, args, _excludedConnectionIds, cancellationToken);
         }
@@ -26,7 +26,7 @@
         private readonly HubManager<THub> _hubManager = hubManager;
         private readonly IReadOnlyList<string> _connectionIds = connectionIds;
 
-        public Task SendAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
+        public Task SendCoreAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
         {
             return _hubManager.SendConnectionsAsync(methodName, args, _connectionIds, cancellationToken);
         }
@@ -37,7 +37,7 @@
         private readonly HubManager<THub> _hubManager = hubManager;
         private readonly string _connectionId = connectionId;
 
-        public Task SendAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
+        public Task SendCoreAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
         {
             return _hubManager.SendConnectionAsync(_connectionId, methodName, args, cancellationToken);
         }
@@ -48,7 +48,7 @@
         private readonly HubManager<THub> _hubManager = hubManager;
         private readonly string _sessionId = sessionId;
 
-        public Task SendAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
+        public Task SendCoreAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
         {
             return _hubManager.SendSessionAsync(_sessionId, methodName, args, cancellationToken);
         }
@@ -60,7 +60,7 @@
         private readonly string _sessionId = sessionId;
         private readonly IReadOnlyList<string> _excludedConnectionIds = excludedConnectionIds;
 
-        public Task SendAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
+        public Task SendCoreAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
         {
             return _hubManager.SendSessionExcept(_sessionId, methodName, args, _excludedConnectionIds, cancellationToken);
         }
@@ -71,7 +71,7 @@
         private readonly HubManager<THub> _hubManager = hubManager;
         private readonly IReadOnlyList<string> _sessionIds = sessionIds;
 
-        public Task SendAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
+        public Task SendCoreAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
         {
             return _hubManager.SendSessionsAsync(_sessionIds, methodName, args, cancellationToken);
         }

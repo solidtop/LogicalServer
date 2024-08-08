@@ -2,6 +2,6 @@
 {
     public interface IClientProxy
     {
-        Task SendAsync(string methodName, object?[] args, CancellationToken cancellationToken = default);
+        Task SendCoreAsync(string methodName, object?[] args, CancellationToken cancellationToken = default);
     }
 }
