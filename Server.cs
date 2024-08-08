@@ -1,39 +1,47 @@
-﻿using LogicalServer.Common.Exceptions;
-using LogicalServer.Hubs;
+﻿using LS.Common.Messaging;
+using LS.Core;
+using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-namespace LogicalServer
+namespace LS
 {
-    public class Server(HubClientStore clientStore, HubManager hubManager, IExceptionHandler exceptionHandler, ILogger<Server> logger)
+    public class Server(
+        IOptions<ServerOptions> options,
+        ConnectionHandlerResolver resolver,
+        HubMessageParser messageParser,
+        ILogger<Server> logger
+        )
     {
-        private readonly HubClientStore _clientStore = clientStore;
-        private readonly HubManager _hubManager = hubManager;
-        private readonly IExceptionHandler _exceptionHandler = exceptionHandler;
+        private readonly ServerOptions _options = options.Value;
+        private readonly ConnectionHandlerResolver _resolver = resolver;
+        private readonly HubMessageParser _messageParser = messageParser;
         private readonly ILogger<Server> _logger = logger;
         private TcpListener? _listener;
 
-        public void Listen(string ipAdress, int port, Action callback)
+        public void Start(string ipAdress, int port)
         {
             _listener = new TcpListener(IPAddress.Parse(ipAdress), port);
             _listener.Start();
-            callback();
+            _logger.LogInformation("Starting server on port {port}...", port);
         }
 
-        public async Task AcceptClientsAsync(CancellationToken stoppingToken)
+        public async Task AcceptClientsAsync(CancellationToken cancellationToken)
         {
             if (_listener is null)
-            {
-                throw new Exception("TcpListener is null");
-            }
+                throw new NullReferenceException("TcpListener");
 
-            while (!stoppingToken.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    var tcpClient = await _listener.AcceptTcpClientAsync(stoppingToken);
-                    _ = Task.Run(() => HandleClientAsync(tcpClient, stoppingToken), stoppingToken);
+                    var tcpClient = await _listener.AcceptTcpClientAsync(cancellationToken);
+
+                    if (tcpClient.Connected)
+                    {
+                        _ = Task.Run(() => ReadMessagesAsync(tcpClient, cancellationToken), cancellationToken);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -46,69 +54,108 @@ namespace LogicalServer
             }
 
             _listener.Stop();
-            _logger.LogCritical("Server stopped listening");
+            _logger.LogInformation("Server stopped listening");
         }
 
-        private async Task HandleClientAsync(TcpClient tcpClient, CancellationToken stoppingToken)
+        private async Task ReadMessagesAsync(TcpClient tcpClient, CancellationToken cancellationToken)
         {
-            var client = ConnectClient(tcpClient);
-            var buffer = new byte[1024];
+            var connection = new HubConnection(tcpClient);
+            HubConnectionResult result;
 
-            while (!stoppingToken.IsCancellationRequested)
+            try
+            {
+                result = await ReadConnectionRequestAsync(connection, cancellationToken);
+                await SendConnectionResponseAsync(connection, null, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading connection request");
+                await SendConnectionResponseAsync(connection, ex, cancellationToken);
+                connection.Close();
+                return;
+            }
+
+            var handler = result.Handler;
+
+            await handler.OnConnectedAsync(connection);
+
+            var bufferSize = _options.MaximumReceiveMessageSize;
+            var buffer = new byte[bufferSize];
+            var stream = tcpClient.GetStream();
+
+            while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    int bytesRead = await client.Stream.ReadAsync(buffer, stoppingToken);
+                    int bytesRead = await stream.ReadAsync(buffer, cancellationToken);
 
                     if (bytesRead == 0)
                     {
                         break;
                     }
 
-                    string incomingMessage = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
-                    var message = HubMessageParser.Parse(incomingMessage);
+                    string data = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
+                    var message = _messageParser.Parse(data);
 
-                    await _exceptionHandler.InvokeAsync(client.Stream, async () =>
-                    {
-                        await _hubManager.RouteMessageAsync(message, client);
-                    });
+                    await handler.DispatchMessageAsync(connection, message);
+                }
+                catch (IOException)
+                {
+                    break;
+                }
+                catch (ObjectDisposedException)
+                {
+                    break;
                 }
                 catch (Exception ex)
                 {
-                    DisconnectClient(tcpClient, client.Id, ex);
-                    return;
+                    _logger.LogError(ex, "Error reading message");
                 }
             }
 
-            DisconnectClient(tcpClient, client.Id, null);
+            await handler.OnDisconnectedAsync(connection, null);
         }
 
-        private HubClient ConnectClient(TcpClient tcpClient)
+        private async Task<HubConnectionResult> ReadConnectionRequestAsync(HubConnection connection, CancellationToken cancellationToken)
         {
-            var client = _clientStore.AddClient(tcpClient);
-            _hubManager.OnConnectedAsync(client.Id);
-            NotifyClient(client);
-            _logger.LogInformation("Client connected");
+            var buffer = new byte[64];
+            var stream = connection.TcpClient.GetStream();
 
-            return client;
+            await stream.ReadAsync(buffer, cancellationToken);
+
+            string data = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
+            var message = _messageParser.Parse(data);
+
+            if (message is HubConnectionRequest connectionRequest)
+            {
+                var handler = _resolver.GetHandler(connectionRequest.HubName)
+                    ?? throw new InvalidOperationException($"Handler not found for hub: {connectionRequest.HubName}");
+
+                return new HubConnectionResult(handler);
+            }
+            else
+            {
+                throw new InvalidOperationException("Invalid connection request");
+            }
         }
 
-        private void DisconnectClient(TcpClient tcpClient, string clientId, Exception? ex)
+        private async Task SendConnectionResponseAsync(HubConnection connection, Exception? exception, CancellationToken cancellationToken)
         {
-            tcpClient.Close();
-            _clientStore.RemoveClient(clientId);
-            _hubManager.OnDisconnectedAsync(clientId, ex);
-            _logger.LogInformation("Client disconnected");
-        }
+            var response = HubConnectionResponse.Empty;
 
-        private static Task NotifyClient(HubClient client)
-        {
-            var message = new HubMessage("/", "on_connected", []);
-            var messageStr = HubMessageParser.Parse(message);
-            var buffer = Encoding.UTF8.GetBytes(messageStr);
-            client.Stream.WriteAsync(buffer, 0, buffer.Length);
+            if (exception is not null)
+            {
+                response = new HubConnectionResponse(exception.Message);
+            }
 
-            return Task.CompletedTask;
+            try
+            {
+                await connection.WriteAsync(response, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending connection response");
+            }
         }
     }
 }

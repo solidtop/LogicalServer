@@ -1,4 +1,4 @@
-﻿using LogicalServer.Hubs;
+﻿using LS.Core;
 
 namespace LogicalServer.Examples
 {
@@ -14,12 +14,12 @@ namespace LogicalServer.Examples
 
         public override Task OnConnectedAsync()
         {
-            return Task.CompletedTask;
+            return base.OnConnectedAsync();
         }
 
         public override Task OnDisconnectedAsync(Exception? exception)
         {
-            return Task.CompletedTask;
+            return base.OnDisconnectedAsync(exception);
         }
     }
 }

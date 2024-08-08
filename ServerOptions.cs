@@ -1,8 +1,10 @@
-﻿namespace LogicalServer
+﻿using LS.Common.Json;
+
+namespace LS
 {
     public class ServerOptions
     {
-        public string IpAdress { get; set; } = "127.0.0.1";
-        public int Port { get; set; } = 8000;
+        public long MaximumReceiveMessageSize { get; set; } = 32 * 1024;
+        public JsonOptions Json { get; set; } = new();
     }
 }
