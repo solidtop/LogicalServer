@@ -1,10 +1,13 @@
-﻿using LS.Common.Messaging;
+﻿using LogicalServer.Core.Internal;
+using LS.Common.Messaging;
+using System.Collections.Concurrent;
 
 namespace LS.Core
 {
-    public class HubManager<THub>(HubConnectionStore connections) where THub : Hub
+    public class HubManager<THub>(HubConnectionStore connections, SessionStore sessions) where THub : Hub
     {
         private readonly HubConnectionStore _connections = connections;
+        private readonly SessionStore _sessions = sessions;
 
         public Task OnConnectedAsync(HubConnection connection)
         {
@@ -14,7 +17,62 @@ namespace LS.Core
 
         public Task OnDisconnectedAsync(HubConnection connection)
         {
+            lock (connection.SessionIds)
+            {
+                foreach (var sessionId in connection.SessionIds)
+                {
+                    _sessions.Remove(connection.Id, sessionId);
+                }
+            }
+
             _connections.Remove(connection);
+
+            return Task.CompletedTask;
+        }
+
+        public Task AddToSessionAsync(string connectionId, string sessionId, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(connectionId);
+            ArgumentNullException.ThrowIfNull(sessionId);
+
+            var connection = _connections[connectionId];
+
+            if (connection is null)
+                return Task.CompletedTask;
+
+            lock (connection.SessionIds)
+            {
+                if (!connection.SessionIds.Add(sessionId))
+                {
+                    return Task.CompletedTask;
+                }
+
+                _sessions.Add(connection, sessionId);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task RemoveFromSessionAsync(string connectionId, string sessionId, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(connectionId);
+            ArgumentNullException.ThrowIfNull(sessionId);
+
+            var connection = _connections[connectionId];
+
+            if (connection is null)
+                return Task.CompletedTask;
+
+            lock (connection.SessionIds)
+            {
+                if (!connection.SessionIds.Remove(sessionId))
+                {
+                    return Task.CompletedTask;
+                }
+
+                _sessions.Remove(connectionId, sessionId);
+            }
+
             return Task.CompletedTask;
         }
 
@@ -31,6 +89,77 @@ namespace LS.Core
         public Task SendConnectionsAsync(string methodName, object?[] args, IReadOnlyList<string> connectionIds, CancellationToken cancellationToken = default)
         {
             return SendToAllConnections(methodName, args, connection => connectionIds.Contains(connection.Id), cancellationToken);
+        }
+
+        public Task SendConnectionAsync(string connectionId, string methodName, object?[] args, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(connectionId);
+
+            var connection = _connections[connectionId];
+
+            if (connection is null)
+                return Task.CompletedTask;
+
+            var message = new InvocationMessage(methodName, args);
+
+            return connection.WriteAsync(message, cancellationToken).AsTask();
+        }
+
+        public Task SendSessionsAsync(IReadOnlyList<string> sessionIds, string methodName, object?[] args, CancellationToken cancellationToken = default)
+        {
+            List<Task> tasks = [];
+            var message = new InvocationMessage(methodName, args);
+
+            foreach (var sessionId in sessionIds)
+            {
+                if (string.IsNullOrEmpty(sessionId))
+                {
+                    throw new InvalidOperationException("Cannot send to empty sessionId");
+                }
+
+                var session = _sessions[sessionId];
+
+                if (session is null)
+                    continue;
+
+                SendToSessionConnections(session.Connections, null, ref tasks, ref message, cancellationToken);
+            }
+
+            return Task.WhenAll(tasks);
+        }
+
+        public Task SendSessionAsync(string sessionId, string methodName, object?[] args, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(sessionId);
+
+            var session = _sessions[sessionId];
+
+            if (session is null)
+                return Task.CompletedTask;
+
+            List<Task> tasks = [];
+            var message = new InvocationMessage(methodName, args);
+
+            SendToSessionConnections(session.Connections, null, ref tasks, ref message, cancellationToken);
+
+            return Task.WhenAll(tasks);
+        }
+
+        public Task SendSessionExcept(string sessionId, string methodName, object?[] args, IReadOnlyList<string> excludedConnectionIds, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(sessionId);
+
+            var session = _sessions[sessionId];
+
+            if (session is null)
+                return Task.CompletedTask;
+
+            List<Task> tasks = [];
+            var message = new InvocationMessage(methodName, args);
+
+            SendToSessionConnections(session.Connections, connection => !excludedConnectionIds.Contains(connection.Id), ref tasks, ref message, cancellationToken);
+
+            return Task.WhenAll(tasks);
         }
 
         private Task SendToAllConnections(string methodName, object?[] args, Func<HubConnection, bool>? include, CancellationToken cancellationToken = default)
@@ -71,18 +200,37 @@ namespace LS.Core
             return Task.WhenAll(tasks);
         }
 
-        public Task SendConnectionAsync(string connectionId, string methodName, object?[] args, CancellationToken cancellationToken = default)
+        private static void SendToSessionConnections(
+            ConcurrentDictionary<string, HubConnection> connections,
+            Func<HubConnection, bool>? include,
+            ref List<Task> tasks,
+            ref InvocationMessage message,
+            CancellationToken cancellationToken
+            )
         {
-            ArgumentNullException.ThrowIfNull(connectionId);
+            foreach (var connection in connections)
+            {
+                if (include != null && !include(connection.Value))
+                {
+                    continue;
+                }
 
-            var connection = _connections[connectionId];
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
 
-            if (connection is null)
-                return Task.CompletedTask;
+                var task = connection.Value.WriteAsync(message, cancellationToken);
 
-            var message = new InvocationMessage(methodName, args);
-
-            return connection.WriteAsync(message, cancellationToken).AsTask();
+                if (!task.IsCompletedSuccessfully)
+                {
+                    tasks.Add(task.AsTask());
+                }
+                else
+                {
+                    task.GetAwaiter().GetResult();
+                }
+            }
         }
     }
 }

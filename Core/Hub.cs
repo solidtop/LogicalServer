@@ -1,4 +1,5 @@
-﻿using LS.Core.Internal;
+﻿using LogicalServer.Core;
+using LS.Core.Internal;
 
 namespace LS.Core
 {
@@ -8,6 +9,7 @@ namespace LS.Core
 
         public IHubCallerClients Clients { get; set; } = default!;
         public HubCallerContext Context { get; set; } = default!;
+        public ISessionManager Sessions { get; set; } = default!;
 
         public virtual Task OnConnectedAsync()
         {

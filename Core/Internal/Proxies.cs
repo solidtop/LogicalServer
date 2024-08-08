@@ -42,4 +42,38 @@
             return _hubManager.SendConnectionAsync(_connectionId, methodName, args, cancellationToken);
         }
     }
+
+    internal sealed class SessionProxy<THub>(HubManager<THub> hubManager, string sessionId) : IClientProxy where THub : Hub
+    {
+        private readonly HubManager<THub> _hubManager = hubManager;
+        private readonly string _sessionId = sessionId;
+
+        public Task SendAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
+        {
+            return _hubManager.SendSessionAsync(_sessionId, methodName, args, cancellationToken);
+        }
+    }
+
+    internal sealed class SessionExceptProxy<THub>(HubManager<THub> hubManager, string sessionId, IReadOnlyList<string> excludedConnectionIds) : IClientProxy where THub : Hub
+    {
+        private readonly HubManager<THub> _hubManager = hubManager;
+        private readonly string _sessionId = sessionId;
+        private readonly IReadOnlyList<string> _excludedConnectionIds = excludedConnectionIds;
+
+        public Task SendAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
+        {
+            return _hubManager.SendSessionExcept(_sessionId, methodName, args, _excludedConnectionIds, cancellationToken);
+        }
+    }
+
+    internal sealed class MultipleSessionProxy<THub>(HubManager<THub> hubManager, IReadOnlyList<string> sessionIds) : IClientProxy where THub : Hub
+    {
+        private readonly HubManager<THub> _hubManager = hubManager;
+        private readonly IReadOnlyList<string> _sessionIds = sessionIds;
+
+        public Task SendAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
+        {
+            return _hubManager.SendSessionsAsync(_sessionIds, methodName, args, cancellationToken);
+        }
+    }
 }

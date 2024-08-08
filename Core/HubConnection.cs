@@ -8,6 +8,11 @@ namespace LS.Core
 {
     public class HubConnection
     {
+        internal string Id { get; }
+        internal TcpClient TcpClient { get; }
+        internal HubCallerContext HubCallerContext { get; }
+        internal HashSet<string> SessionIds { get; } = [];
+
         public HubConnection(TcpClient tcpClient)
         {
             Id = Guid.NewGuid().ToString();
@@ -16,10 +21,6 @@ namespace LS.Core
 
             TcpClient.EnableKeepAlive();
         }
-
-        internal string Id { get; }
-        internal TcpClient TcpClient { get; }
-        internal HubCallerContext HubCallerContext { get; }
 
         public async ValueTask WriteAsync(HubMessage message, CancellationToken cancellationToken = default)
         {

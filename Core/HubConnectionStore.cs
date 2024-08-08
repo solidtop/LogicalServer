@@ -7,9 +7,6 @@ namespace LS.Core
     {
         private readonly ConcurrentDictionary<string, HubConnection> _connections = [];
 
-        public void Add(HubConnection connection) => _connections.TryAdd(connection.Id, connection);
-        public void Remove(HubConnection connection) => _connections.TryRemove(connection.Id, out _);
-
         public HubConnection? this[string id]
         {
             get
@@ -18,6 +15,9 @@ namespace LS.Core
                 return connection;
             }
         }
+
+        public void Add(HubConnection connection) => _connections.TryAdd(connection.Id, connection);
+        public void Remove(HubConnection connection) => _connections.TryRemove(connection.Id, out _);
 
         public IEnumerator<HubConnection> GetEnumerator()
         {

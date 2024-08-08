@@ -25,5 +25,20 @@
         {
             return _hubClients.Clients(connectionIds);
         }
+
+        public IClientProxy Sessions(IReadOnlyList<string> sessionIds)
+        {
+            return _hubClients.Sessions(sessionIds);
+        }
+
+        public IClientProxy Session(string sessionId)
+        {
+            return _hubClients.Session(sessionId);
+        }
+
+        public IClientProxy SessionExcept(string sessionId, IReadOnlyList<string> excludedConnectionIds)
+        {
+            return _hubClients.SessionExcept(sessionId, excludedConnectionIds);
+        }
     }
 }

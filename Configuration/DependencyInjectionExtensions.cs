@@ -1,4 +1,5 @@
-﻿using LS.Common.Json;
+﻿using LogicalServer.Core.Internal;
+using LS.Common.Json;
 using LS.Common.Messaging;
 using LS.Core;
 using LS.Core.Internal;
@@ -18,6 +19,7 @@ namespace LS.Configuration
             services.TryAddSingleton<HubMessageParser>();
             services.TryAddSingleton<JsonNamingStrategyProvider>();
             services.TryAddSingleton<HubConnectionStore>();
+            services.TryAddSingleton<SessionStore>();
             services.TryAddSingleton<ConnectionHandlerResolver>();
             services.TryAddSingleton(typeof(HubManager<>));
             services.TryAddSingleton(typeof(HubConnectionHandler<>));

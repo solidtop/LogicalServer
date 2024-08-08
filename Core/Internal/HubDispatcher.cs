@@ -71,6 +71,7 @@ namespace LS.Core.Internal
         {
             hub.Clients = new HubCallerClients(connection.Id, _hubContext.Clients);
             hub.Context = connection.HubCallerContext;
+            hub.Sessions = _hubContext.Sessions;
         }
 
         private static async Task SendInvocationError(string? invocationId, HubConnection connection, string errorMessage)

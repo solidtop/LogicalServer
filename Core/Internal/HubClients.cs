@@ -21,5 +21,20 @@ namespace LS.Core.Internal
         {
             return new MultipleClientProxy<THub>(_hubManager, connectionIds);
         }
+
+        public IClientProxy Sessions(IReadOnlyList<string> sessionIds)
+        {
+            return new MultipleSessionProxy<THub>(_hubManager, sessionIds);
+        }
+
+        public IClientProxy Session(string sessionId)
+        {
+            return new SessionProxy<THub>(_hubManager, sessionId);
+        }
+
+        public IClientProxy SessionExcept(string sessionId, IReadOnlyList<string> excludedConnectionIds)
+        {
+            return new SessionExceptProxy<THub>(_hubManager, sessionId, excludedConnectionIds);
+        }
     }
 }
