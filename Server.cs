@@ -60,28 +60,12 @@ namespace LS
         private async Task ReadMessagesAsync(TcpClient tcpClient, CancellationToken cancellationToken)
         {
             var connection = new HubConnection(tcpClient);
-            HubConnectionResult result;
-
-            try
-            {
-                result = await ReadConnectionRequestAsync(connection, cancellationToken);
-                await SendConnectionResponseAsync(connection, null, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error reading connection request");
-                await SendConnectionResponseAsync(connection, ex, cancellationToken);
-                connection.Close();
-                return;
-            }
-
-            var handler = result.Handler;
-
-            await handler.OnConnectedAsync(connection);
 
             var bufferSize = _options.MaximumReceiveMessageSize;
             var buffer = new byte[bufferSize];
             var stream = tcpClient.GetStream();
+            var connectedToHub = false;
+            IConnectionHandler? handler = null;
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -97,7 +81,29 @@ namespace LS
                     string data = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
                     var message = _messageParser.Parse(data);
 
-                    await handler.DispatchMessageAsync(connection, message);
+                    if (message is HubConnectionRequest connectionRequest)
+                    {
+                        if (connectedToHub)
+                        {
+                            _logger.LogDebug("Connection to hub already established. Ignoring request.");
+                            continue;
+                        }
+
+                        handler = _resolver.GetHandler(connectionRequest.HubName)
+                            ?? throw new InvalidOperationException($"Handler not found for hub: {connectionRequest.HubName}");
+
+                        await handler.OnConnectedAsync(connection);
+                        await SendConnectionResponseAsync(connection, null, cancellationToken);
+                        connectedToHub = true;
+                    }
+                    else if (handler != null)
+                    {
+                        await handler.DispatchMessageAsync(connection, message);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Handler not initialized before receiving messages.");
+                    }
                 }
                 catch (IOException)
                 {
@@ -109,34 +115,23 @@ namespace LS
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error reading message");
+                    _logger.LogDebug(ex, "Error reading message");
+
+                    if (!connectedToHub)
+                    {
+                        await SendConnectionResponseAsync(connection, ex, cancellationToken);
+                        break;
+                    }
                 }
             }
 
+            if (handler is null)
+            {
+                connection.Close();
+                return;
+            }
+
             await handler.OnDisconnectedAsync(connection, null);
-        }
-
-        private async Task<HubConnectionResult> ReadConnectionRequestAsync(HubConnection connection, CancellationToken cancellationToken)
-        {
-            var buffer = new byte[64];
-            var stream = connection.TcpClient.GetStream();
-
-            await stream.ReadAsync(buffer, cancellationToken);
-
-            string data = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
-            var message = _messageParser.Parse(data);
-
-            if (message is HubConnectionRequest connectionRequest)
-            {
-                var handler = _resolver.GetHandler(connectionRequest.HubName)
-                    ?? throw new InvalidOperationException($"Handler not found for hub: {connectionRequest.HubName}");
-
-                return new HubConnectionResult(handler);
-            }
-            else
-            {
-                throw new InvalidOperationException("Invalid connection request");
-            }
         }
 
         private async Task SendConnectionResponseAsync(HubConnection connection, Exception? exception, CancellationToken cancellationToken)
@@ -154,7 +149,7 @@ namespace LS
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending connection response");
+                _logger.LogDebug(ex, "Error sending connection response");
             }
         }
     }

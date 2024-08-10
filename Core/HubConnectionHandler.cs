@@ -13,7 +13,7 @@ namespace LS.Core
         {
             try
             {
-                _logger.LogInformation("Client Connected to {HubName}", typeof(THub).Name);
+                _logger.LogDebug("Client Connected to {HubName}", typeof(THub).Name);
                 await _hubManager.OnConnectedAsync(connection);
                 await _dispatcher.OnConnectedAsync(connection);
             }
@@ -42,7 +42,7 @@ namespace LS.Core
             }
             finally
             {
-                _logger.LogInformation("Client Disconnected from {HubName}", typeof(THub).Name);
+                _logger.LogDebug("Client Disconnected from {HubName}", typeof(THub).Name);
                 connection.Close();
             }
         }
@@ -68,7 +68,7 @@ namespace LS.Core
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending close");
+                _logger.LogDebug(ex, "Error sending close");
             }
         }
     }

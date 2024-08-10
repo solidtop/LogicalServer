@@ -59,7 +59,7 @@ namespace LS.Common.Messaging
 
             if (token is null || token.Type == JTokenType.Null)
             {
-                throw new JsonSerializationException($"Property {name} is missing or null");
+                throw new JsonSerializationException($"Property '{name}' is missing or null");
             }
 
             return token.ToObject<T>() ?? throw new JsonSerializationException("Error serializing message");
