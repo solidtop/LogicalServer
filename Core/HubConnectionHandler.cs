@@ -19,8 +19,7 @@ namespace LS.Core
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error dispatching hub event");
-                await OnDisconnectedAsync(connection, ex);
+                _logger.LogDebug(ex, "Error dispatching hub event");
             }
 
             return connection;

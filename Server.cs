@@ -1,9 +1,9 @@
 ﻿using LS.Common.Messaging;
 using LS.Core;
 using Microsoft.Extensions.Options;
+using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 
 namespace LS
 {
@@ -37,11 +37,7 @@ namespace LS
                 try
                 {
                     var tcpClient = await _listener.AcceptTcpClientAsync(cancellationToken);
-
-                    if (tcpClient.Connected)
-                    {
-                        _ = Task.Run(() => ReadMessagesAsync(tcpClient, cancellationToken), cancellationToken);
-                    }
+                    _ = Task.Run(() => ReadMessagesAsync(tcpClient, cancellationToken), cancellationToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -59,79 +55,99 @@ namespace LS
 
         private async Task ReadMessagesAsync(TcpClient tcpClient, CancellationToken cancellationToken)
         {
+            var reader = PipeReader.Create(tcpClient.GetStream());
             var connection = new HubConnection(tcpClient);
-
-            var bufferSize = _options.MaximumReceiveMessageSize;
-            var buffer = new byte[bufferSize];
-            var stream = tcpClient.GetStream();
             var connectedToHub = false;
             IConnectionHandler? handler = null;
 
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                try
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    int bytesRead = await stream.ReadAsync(buffer, cancellationToken);
+                    var result = await reader.ReadAsync(cancellationToken);
+                    var buffer = result.Buffer;
 
-                    if (bytesRead == 0)
+                    try
                     {
-                        break;
-                    }
-
-                    string data = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
-                    var message = _messageParser.Parse(data);
-
-                    if (message is HubConnectionRequest connectionRequest)
-                    {
-                        if (connectedToHub)
+                        if (result.IsCanceled)
                         {
-                            _logger.LogDebug("Connection to hub already established. Ignoring request.");
-                            continue;
+                            break;
                         }
 
-                        handler = _resolver.GetHandler(connectionRequest.HubName)
-                            ?? throw new InvalidOperationException($"Handler not found for hub: {connectionRequest.HubName}");
+                        while (_messageParser.TryParseMessage(ref buffer, out var message))
+                        {
+                            if (message is HubConnectionRequest connectionRequest)
+                            {
+                                if (connectedToHub)
+                                {
+                                    _logger.LogDebug("Connection to hub already established. Ignoring request.");
+                                    continue;
+                                }
 
-                        await handler.OnConnectedAsync(connection);
-                        await SendConnectionResponseAsync(connection, null, cancellationToken);
-                        connectedToHub = true;
-                    }
-                    else if (handler != null)
-                    {
-                        await handler.DispatchMessageAsync(connection, message);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("Handler not initialized before receiving messages.");
-                    }
-                }
-                catch (IOException)
-                {
-                    break;
-                }
-                catch (ObjectDisposedException)
-                {
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogDebug(ex, "Error reading message");
+                                handler = _resolver.GetHandler(connectionRequest.HubName)
+                                    ?? throw new InvalidOperationException($"Handler not found for hub: {connectionRequest.HubName}");
 
-                    if (!connectedToHub)
+                                await handler.OnConnectedAsync(connection);
+                                await SendConnectionResponseAsync(connection, null, cancellationToken);
+                                connectedToHub = true;
+                            }
+                            else if (handler != null && message != null)
+                            {
+                                await handler.DispatchMessageAsync(connection, message);
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Handler not initialized before receiving messages.");
+                            }
+                        }
+
+                        if (result.IsCompleted)
+                        {
+                            if (!buffer.IsEmpty)
+                            {
+                                throw new InvalidDataException("Connection closed with incomplete message");
+                            }
+
+                            break;
+                        }
+                    }
+                    catch (IOException)
                     {
-                        await SendConnectionResponseAsync(connection, ex, cancellationToken);
                         break;
                     }
+                    catch (ObjectDisposedException)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogDebug(ex, "Error reading message");
+
+                        if (!connectedToHub)
+                        {
+                            await SendConnectionResponseAsync(connection, ex, cancellationToken);
+                            break;
+                        }
+                    }
+                    finally
+                    {
+                        reader.AdvanceTo(buffer.Start, buffer.End);
+                    }
                 }
             }
-
-            if (handler is null)
+            finally
             {
-                connection.Close();
-                return;
-            }
+                await reader.CompleteAsync();
 
-            await handler.OnDisconnectedAsync(connection, null);
+                if (handler is null)
+                {
+                    connection.Close();
+                }
+                else
+                {
+                    await handler.OnDisconnectedAsync(connection, null);
+                }
+            }
         }
 
         private async Task SendConnectionResponseAsync(HubConnection connection, Exception? exception, CancellationToken cancellationToken)

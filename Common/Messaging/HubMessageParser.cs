@@ -1,7 +1,9 @@
-﻿using LS.Common.Exceptions;
+﻿using LogicalServer.Core.Internal;
 using LS.Common.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using System.Buffers;
+using System.Text;
 
 namespace LS.Common.Messaging
 {
@@ -22,12 +24,27 @@ namespace LS.Common.Messaging
             _serializer.Converters.Add(new HubMessageConverter());
         }
 
-        public HubMessage Parse(string data)
+        public bool TryParseMessage(ref ReadOnlySequence<byte> buffer, out HubMessage? message)
         {
+            if (!TextMessageParser.TryParseMessage(ref buffer, out var payload))
+            {
+                message = null;
+                return false;
+            }
+
+            message = Parse(payload);
+
+            return message != null;
+        }
+
+        private HubMessage? Parse(ReadOnlySequence<byte> buffer)
+        {
+            string data = Encoding.UTF8.GetString(buffer);
+
             using var reader = new StringReader(data);
             using var jsonReader = new JsonTextReader(reader);
 
-            return _serializer.Deserialize<HubMessage>(jsonReader) ?? throw new InvalidMessageException();
+            return _serializer.Deserialize<HubMessage>(jsonReader);
         }
     }
 }

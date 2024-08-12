@@ -18,7 +18,6 @@ namespace LS.Core
             Id = Guid.NewGuid().ToString();
             TcpClient = tcpClient;
             HubCallerContext = new HubCallerContext(this);
-
             TcpClient.EnableKeepAlive();
         }
 
@@ -27,8 +26,9 @@ namespace LS.Core
             if (!TcpClient.Connected)
                 return;
 
-            var serializedMessage = JsonConvert.SerializeObject(message);
+            var serializedMessage = JsonConvert.SerializeObject(message) + "\x1E";
             var stream = TcpClient.GetStream();
+
             var buffer = Encoding.UTF8.GetBytes(serializedMessage);
             await stream.WriteAsync(buffer, cancellationToken);
         }
