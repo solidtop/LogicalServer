@@ -11,24 +11,15 @@ namespace LS.Core
 
         public async Task<HubConnection> OnConnectedAsync(HubConnection connection)
         {
-            try
-            {
-                _logger.LogDebug("Client Connected to {HubName}", typeof(THub).Name);
-                await _hubManager.OnConnectedAsync(connection);
-                await _dispatcher.OnConnectedAsync(connection);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Error dispatching hub event");
-            }
+            _logger.LogDebug("Client Connected to {HubName}", typeof(THub).Name);
+            await _hubManager.OnConnectedAsync(connection);
+            await _dispatcher.OnConnectedAsync(connection);
 
             return connection;
         }
 
         public async Task OnDisconnectedAsync(HubConnection connection, Exception? exception)
         {
-            await SendCloseAsync(connection, exception, allowReconnect: false);
-
             try
             {
                 await _hubManager.OnDisconnectedAsync(connection);

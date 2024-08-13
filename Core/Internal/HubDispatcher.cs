@@ -53,12 +53,12 @@ namespace LS.Core.Internal
 
             try
             {
-                await _methodInvoker.InvokeAsync(hub, message.MethodName, message.Arguments);
-                await connection.WriteAsync(CompletionMessage.WithResult(message.InvocationId, "Message received successfully"));
+                var task = _methodInvoker.InvokeAsync(hub, message.MethodName, message.Arguments);
+                await connection.WriteAsync(CompletionMessage.WithResult(message.InvocationId, task.Result));
             }
             catch (Exception ex)
             {
-                await SendInvocationError(message.InvocationId, connection, ex.Message);
+                await connection.WriteAsync(CompletionMessage.WithError(message.InvocationId, ex.Message));
                 throw new InvalidOperationException("Failed to invoke method due to an error.", ex);
             }
             finally
@@ -72,16 +72,6 @@ namespace LS.Core.Internal
             hub.Clients = new HubCallerClients(connection.Id, _hubContext.Clients);
             hub.Context = connection.HubCallerContext;
             hub.Sessions = _hubContext.Sessions;
-        }
-
-        private static async Task SendInvocationError(string? invocationId, HubConnection connection, string errorMessage)
-        {
-            if (string.IsNullOrEmpty(invocationId))
-            {
-                return;
-            }
-
-            await connection.WriteAsync(CompletionMessage.WithError(invocationId, errorMessage));
         }
     }
 }

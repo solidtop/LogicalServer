@@ -17,14 +17,16 @@ namespace LS.Core.Internal
 
             foreach (var method in hubType.GetMethods(BindingFlags.Instance | BindingFlags.Public))
             {
-                if (method.ReturnType == typeof(Task) && !method.IsVirtual)
+                if ((method.ReturnType == typeof(Task) ||
+                    (method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>)))
+                    && !method.IsVirtual)
                 {
                     _methodCache[method.Name] = new HubMethodDescriptor(method);
                 }
             }
         }
 
-        public async Task InvokeAsync(Hub hub, string methodName, object?[] args)
+        public async Task<object?> InvokeAsync(Hub hub, string methodName, object?[] args)
         {
             if (!_methodCache.TryGetValue(methodName, out var method))
             {
@@ -32,7 +34,7 @@ namespace LS.Core.Internal
             }
 
             args = ChangeArgTypes(method.Parameters, args);
-            await method.Invoker(hub, args);
+            return await method.Invoker(hub, args);
         }
 
         private static object?[] ChangeArgTypes(ParameterInfo[] parameters, object?[] args)

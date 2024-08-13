@@ -7,9 +7,9 @@ namespace LS.Core.Internal
     {
         public MethodInfo Info { get; set; } = methodInfo;
         public ParameterInfo[] Parameters { get; private set; } = methodInfo.GetParameters();
-        public Func<Hub, object?[], Task> Invoker { get; } = CreateInvoker(methodInfo);
+        public Func<Hub, object?[], Task<object?>> Invoker { get; } = CreateInvoker(methodInfo);
 
-        private static Func<Hub, object?[], Task> CreateInvoker(MethodInfo methodInfo)
+        private static Func<Hub, object?[], Task<object?>> CreateInvoker(MethodInfo methodInfo)
         {
             var hubParam = Expression.Parameter(typeof(Hub), "hub");
             var argsParam = Expression.Parameter(typeof(object?[]), "args");
@@ -20,8 +20,28 @@ namespace LS.Core.Internal
             var declaringType = methodInfo.DeclaringType ?? throw new InvalidOperationException("DeclaringType is null");
             var call = Expression.Call(Expression.Convert(hubParam, declaringType), methodInfo, parameters);
 
-            var lambda = Expression.Lambda<Func<Hub, object?[], Task>>(call, hubParam, argsParam).Compile();
-            return (hub, args) => lambda(hub, args);
+            if (methodInfo.ReturnType.IsGenericType && methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+            {
+                var resultType = methodInfo.ReturnType.GetGenericArguments()[0];
+                var lambda = Expression.Lambda(call, hubParam, argsParam).Compile();
+
+                return async (hub, args) =>
+                {
+                    var task = (Task)lambda.DynamicInvoke(hub, args)!;
+                    await task.ConfigureAwait(false);
+                    return ((dynamic)task).Result;
+                };
+            }
+            else
+            {
+                var lambda = Expression.Lambda<Func<Hub, object?[], Task>>(call, hubParam, argsParam).Compile();
+
+                return async (hub, args) =>
+                {
+                    await lambda(hub, args);
+                    return null;
+                };
+            }
         }
     }
 }
