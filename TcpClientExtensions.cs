@@ -5,8 +5,8 @@ namespace LS
     public static class TcpClientExtensions
     {
         private const int keepAliveTime = 1;
-        private const int keepAliveInterval = 1;
-        private const int keepAliveRetryCount = 2;
+        private const int keepAliveInterval = 60;
+        private const int keepAliveRetryCount = 3;
 
         public static void EnableKeepAlive(this TcpClient client)
         {

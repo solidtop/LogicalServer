@@ -4,7 +4,7 @@
     {
         Connection,
         Invocation,
-        Close,
         Completion,
+        Close,
     }
 }
