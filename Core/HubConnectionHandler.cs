@@ -48,7 +48,7 @@ namespace LS.Core
 
             if (exception is not null)
             {
-                var errorMessage = ErrorMessageHelper.BuildErrorMessage("Connection closed with an error.", exception, true);
+                var errorMessage = ErrorMessageHelper.BuildErrorMessage("Connection closed with an error.", exception);
                 closeMessage = new CloseMessage(errorMessage, allowReconnect);
             }
 

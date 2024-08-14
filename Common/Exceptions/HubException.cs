@@ -1,6 +1,6 @@
 ﻿namespace LogicalServer.Common.Exceptions
 {
-    public class HubException() : Exception("")
+    public class HubException(string message) : Exception(message)
     {
     }
 }

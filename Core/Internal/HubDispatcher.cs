@@ -58,8 +58,10 @@ namespace LS.Core.Internal
             }
             catch (Exception ex)
             {
-                await connection.WriteAsync(CompletionMessage.WithError(message.InvocationId, ex.Message));
-                throw new InvalidOperationException("Failed to invoke method due to an error.", ex);
+                var exception = ex.InnerException is null ? ex : ex.InnerException;
+                var errorMessage = ErrorMessageHelper.BuildErrorMessage($"Failed to invoke {message.MethodName} due to an error.", exception);
+                await connection.WriteAsync(CompletionMessage.WithError(message.InvocationId, errorMessage));
+                throw;
             }
             finally
             {
