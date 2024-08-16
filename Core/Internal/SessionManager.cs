@@ -1,6 +1,4 @@
-﻿using LS.Core;
-
-namespace LogicalServer.Core.Internal
+﻿namespace LogicalServer.Core.Internal
 {
     internal sealed class SessionManager<THub>(HubManager<THub> hubManager) : ISessionManager where THub : Hub
     {

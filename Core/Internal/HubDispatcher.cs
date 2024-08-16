@@ -1,6 +1,6 @@
-﻿using LS.Common.Messaging;
+﻿using LogicalServer.Common.Messaging;
 
-namespace LS.Core.Internal
+namespace LogicalServer.Core.Internal
 {
     internal sealed class HubDispatcher<THub>(
         IServiceScopeFactory scopeFactory,
@@ -56,7 +56,7 @@ namespace LS.Core.Internal
                 var task = _methodInvoker.InvokeAsync(hub, message.MethodName, message.Arguments);
                 await connection.WriteAsync(CompletionMessage.WithResult(message.InvocationId, task.Result));
             }
-            catch (Exception ex)
+            catch (AggregateException ex)
             {
                 var exception = ex.InnerException is null ? ex : ex.InnerException;
                 var errorMessage = ErrorMessageHelper.BuildErrorMessage($"Failed to invoke {message.MethodName} due to an error.", exception);

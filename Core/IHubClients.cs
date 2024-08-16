@@ -1,4 +1,4 @@
-﻿namespace LS.Core
+﻿namespace LogicalServer.Core
 {
     public interface IHubClients
     {

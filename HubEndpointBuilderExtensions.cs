@@ -1,6 +1,6 @@
-﻿using LS.Core;
+﻿using LogicalServer.Core;
 
-namespace LS.Configuration
+namespace LogicalServer
 {
     public static class HubEndpointBuilderExtensions
     {

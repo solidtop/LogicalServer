@@ -1,4 +1,4 @@
-﻿namespace LS.Common.Json
+﻿namespace LogicalServer.Common.Json
 {
     public class JsonOptions
     {

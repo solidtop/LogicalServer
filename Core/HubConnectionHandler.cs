@@ -1,7 +1,7 @@
-﻿using LS.Common.Messaging;
-using LS.Core.Internal;
+﻿using LogicalServer.Common.Messaging;
+using LogicalServer.Core.Internal;
 
-namespace LS.Core
+namespace LogicalServer.Core
 {
     public class HubConnectionHandler<THub>(HubManager<THub> hubManager, IHubDispatcher<THub> dispatcher, ILogger<HubConnectionHandler<THub>> logger) : IConnectionHandler where THub : Hub
     {

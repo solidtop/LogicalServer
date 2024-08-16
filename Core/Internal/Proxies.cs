@@ -1,4 +1,4 @@
-﻿namespace LS.Core.Internal
+﻿namespace LogicalServer.Core.Internal
 {
     internal sealed class AllClientsProxy<THub>(HubManager<THub> hubManager) : IClientProxy where THub : Hub
     {

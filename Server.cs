@@ -1,11 +1,11 @@
-﻿using LS.Common.Messaging;
-using LS.Core;
+﻿using LogicalServer.Common.Messaging;
+using LogicalServer.Core;
 using Microsoft.Extensions.Options;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
 
-namespace LS
+namespace LogicalServer
 {
     public class Server(
         IOptions<ServerOptions> options,

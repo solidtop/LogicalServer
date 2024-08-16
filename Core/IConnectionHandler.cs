@@ -1,6 +1,6 @@
-﻿using LS.Common.Messaging;
+﻿using LogicalServer.Common.Messaging;
 
-namespace LS.Core
+namespace LogicalServer.Core
 {
     public interface IConnectionHandler
     {

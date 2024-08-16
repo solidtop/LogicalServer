@@ -1,5 +1,4 @@
 ﻿using LogicalServer.Core;
-using LS.Core;
 
 namespace LogicalServer.Examples
 {

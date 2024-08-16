@@ -1,7 +1,4 @@
-﻿using LogicalServer.Core;
-using LogicalServer.Core.Internal;
-
-namespace LS.Core.Internal
+﻿namespace LogicalServer.Core.Internal
 {
     internal sealed class HubContext<THub>(HubManager<THub> hubManager) : IHubContext, IHubContext<THub> where THub : Hub
     {

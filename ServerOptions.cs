@@ -1,6 +1,6 @@
-﻿using LS.Common.Json;
+﻿using LogicalServer.Common.Json;
 
-namespace LS
+namespace LogicalServer
 {
     public class ServerOptions
     {

@@ -1,11 +1,11 @@
-﻿using LogicalServer.Core.Internal;
-using LS.Common.Json;
+﻿using LogicalServer.Common.Json;
+using LogicalServer.Core.Internal;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Buffers;
 using System.Text;
 
-namespace LS.Common.Messaging
+namespace LogicalServer.Common.Messaging
 {
     public class HubMessageParser
     {

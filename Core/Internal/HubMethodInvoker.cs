@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace LS.Core.Internal
+namespace LogicalServer.Core.Internal
 {
     internal sealed class HubMethodInvoker<THub> where THub : Hub
     {

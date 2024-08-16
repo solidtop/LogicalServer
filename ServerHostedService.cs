@@ -1,4 +1,4 @@
-﻿namespace LS
+﻿namespace LogicalServer
 {
     public class ServerHostedService(Server server) : IHostedService
     {

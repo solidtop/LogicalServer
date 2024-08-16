@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
 
-namespace LS.Core
+namespace LogicalServer.Core
 {
     public class HubConnectionStore : IEnumerable<HubConnection>
     {

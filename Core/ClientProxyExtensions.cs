@@ -1,6 +1,4 @@
-﻿using LS.Core;
-
-namespace LogicalServer.Core
+﻿namespace LogicalServer.Core
 {
     public static class ClientProxyExtensions
     {

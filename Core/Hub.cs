@@ -1,7 +1,6 @@
-﻿using LogicalServer.Core;
-using LS.Core.Internal;
+﻿using LogicalServer.Core.Internal;
 
-namespace LS.Core
+namespace LogicalServer.Core
 {
     public abstract class Hub : IDisposable
     {

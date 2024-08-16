@@ -1,10 +1,10 @@
-﻿using LS.Common.Messaging;
-using LS.Core.Internal;
+﻿using LogicalServer.Common.Messaging;
+using LogicalServer.Core.Internal;
 using Newtonsoft.Json;
 using System.Net.Sockets;
 using System.Text;
 
-namespace LS.Core
+namespace LogicalServer.Core
 {
     public class HubConnection
     {

@@ -1,4 +1,4 @@
-﻿namespace LS.Common.Messaging
+﻿namespace LogicalServer.Common.Messaging
 {
     public enum MessageType
     {

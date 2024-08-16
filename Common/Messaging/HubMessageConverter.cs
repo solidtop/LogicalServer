@@ -2,7 +2,7 @@
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
-namespace LS.Common.Messaging
+namespace LogicalServer.Common.Messaging
 {
     public class HubMessageConverter : JsonConverter
     {

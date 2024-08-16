@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Serialization;
 
-namespace LS.Common.Json
+namespace LogicalServer.Common.Json
 {
     public class JsonNamingStrategyProvider(IOptions<ServerOptions> options)
     {

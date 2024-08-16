@@ -1,5 +1,4 @@
-﻿
-namespace LS.Core.Internal
+﻿namespace LogicalServer.Core.Internal
 {
     internal sealed class HubClients<THub>(HubManager<THub> hubManager) : IHubClients where THub : Hub
     {

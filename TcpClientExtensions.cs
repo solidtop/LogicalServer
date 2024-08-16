@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
 
-namespace LS
+namespace LogicalServer
 {
     public static class TcpClientExtensions
     {

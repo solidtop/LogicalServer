@@ -1,6 +1,4 @@
-﻿using LogicalServer.Core;
-
-namespace LS.Core
+﻿namespace LogicalServer.Core
 {
     public interface IHubContext
     {

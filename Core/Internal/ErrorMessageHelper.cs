@@ -1,6 +1,6 @@
 ﻿using LogicalServer.Common.Exceptions;
 
-namespace LS.Core.Internal
+namespace LogicalServer.Core.Internal
 {
     internal static class ErrorMessageHelper
     {

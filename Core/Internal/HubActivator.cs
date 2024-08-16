@@ -1,4 +1,4 @@
-﻿namespace LS.Core.Internal
+﻿namespace LogicalServer.Core.Internal
 {
     internal sealed class HubActivator<THub>(IServiceProvider serviceProvider) where THub : Hub
     {

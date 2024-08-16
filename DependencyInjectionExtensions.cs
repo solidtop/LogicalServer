@@ -1,11 +1,10 @@
-﻿using LogicalServer.Core.Internal;
-using LS.Common.Json;
-using LS.Common.Messaging;
-using LS.Core;
-using LS.Core.Internal;
+﻿using LogicalServer.Common.Json;
+using LogicalServer.Common.Messaging;
+using LogicalServer.Core;
+using LogicalServer.Core.Internal;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace LS.Configuration
+namespace LogicalServer
 {
     public static class DependencyInjectionExtensions
     {

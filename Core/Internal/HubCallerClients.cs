@@ -1,4 +1,4 @@
-﻿namespace LS.Core.Internal
+﻿namespace LogicalServer.Core.Internal
 {
     internal sealed class HubCallerClients(string connectionId, IHubClients hubClients) : IHubCallerClients
     {

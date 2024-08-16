@@ -1,4 +1,4 @@
-﻿namespace LS.Core.Internal
+﻿namespace LogicalServer.Core.Internal
 {
     public class HubCallerContext(HubConnection connection)
     {

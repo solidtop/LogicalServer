@@ -1,8 +1,8 @@
-﻿using LogicalServer.Core.Internal;
-using LS.Common.Messaging;
+﻿using LogicalServer.Common.Messaging;
+using LogicalServer.Core.Internal;
 using System.Collections.Concurrent;
 
-namespace LS.Core
+namespace LogicalServer.Core
 {
     public class HubManager<THub>(HubConnectionStore connections, SessionStore sessions) where THub : Hub
     {
