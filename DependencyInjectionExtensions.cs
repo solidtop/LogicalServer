@@ -1,6 +1,4 @@
-﻿using LogicalServer.Common.Json;
-using LogicalServer.Common.Messaging;
-using LogicalServer.Core;
+﻿using LogicalServer.Core;
 using LogicalServer.Core.Internal;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -15,8 +13,6 @@ namespace LogicalServer
             services.AddHostedService<ServerHostedService>();
             services.TryAddSingleton<Server>();
 
-            services.TryAddSingleton<HubMessageParser>();
-            services.TryAddSingleton<JsonNamingStrategyProvider>();
             services.TryAddSingleton<HubConnectionStore>();
             services.TryAddSingleton<SessionStore>();
             services.TryAddSingleton<ConnectionHandlerResolver>();
@@ -24,28 +20,18 @@ namespace LogicalServer
             services.TryAddSingleton(typeof(HubConnectionHandler<>));
             services.TryAddSingleton(typeof(IHubContext<>), typeof(HubContext<>));
             services.TryAddSingleton(typeof(IHubDispatcher<>), typeof(HubDispatcher<>));
-            services.TryAddSingleton(typeof(HubMethodInvoker<>));
 
             services.TryAddScoped(typeof(HubActivator<>));
 
             return services;
         }
 
-        public static IServiceCollection AddLogicalServer(this IServiceCollection services, Action<ServerOptions> configure)
+        public static IServiceCollection AddLogicalServer(this IServiceCollection services, Action<HubOptions> configure)
         {
             ArgumentNullException.ThrowIfNull(services);
 
             services.AddLogicalServer();
             services.Configure(configure);
-
-            return services;
-        }
-
-        public static IServiceCollection AddServerOptions(this IServiceCollection services, IConfiguration configuration)
-        {
-            ArgumentNullException.ThrowIfNull(services);
-
-            services.Configure<ServerOptions>(configuration.GetSection(nameof(ServerOptions)));
 
             return services;
         }

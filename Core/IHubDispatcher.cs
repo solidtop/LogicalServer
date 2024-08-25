@@ -6,6 +6,7 @@ namespace LogicalServer.Core
     {
         Task OnConnectedAsync(HubConnection connection);
         Task OnDisconnectedAsync(HubConnection connection, Exception? exception);
-        Task DispatchMessageAsync(HubConnection connection, HubMessage hubMessage);
+        Task DispatchMessageAsync(HubConnection connection, HubMessage message);
+        IReadOnlyList<Type> GetParameterTypes(string methodName);
     }
 }

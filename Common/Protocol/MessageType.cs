@@ -2,7 +2,7 @@
 {
     public enum MessageType
     {
-        Connection,
+        Handshake,
         Invocation,
         Completion,
         Close,

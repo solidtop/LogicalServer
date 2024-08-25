@@ -1,4 +1,4 @@
-﻿using LogicalServer.Common.Exceptions;
+﻿using LogicalServer.Common;
 
 namespace LogicalServer.Core.Internal
 {

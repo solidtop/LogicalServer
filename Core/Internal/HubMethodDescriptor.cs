@@ -6,7 +6,7 @@ namespace LogicalServer.Core.Internal
     internal sealed class HubMethodDescriptor(MethodInfo methodInfo)
     {
         public MethodInfo Info { get; set; } = methodInfo;
-        public ParameterInfo[] Parameters { get; private set; } = methodInfo.GetParameters();
+        public Type[] ParameterTypes { get; private set; } = methodInfo.GetParameters().Select(p => p.ParameterType).ToArray();
         public Func<Hub, object?[], Task<object?>> Invoker { get; } = CreateInvoker(methodInfo);
 
         private static Func<Hub, object?[], Task<object?>> CreateInvoker(MethodInfo methodInfo)

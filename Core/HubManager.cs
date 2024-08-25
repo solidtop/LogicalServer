@@ -1,4 +1,5 @@
 ﻿using LogicalServer.Common.Messaging;
+using LogicalServer.Common.Protocol;
 using LogicalServer.Core.Internal;
 using System.Collections.Concurrent;
 
@@ -108,7 +109,7 @@ namespace LogicalServer.Core
         public Task SendSessionsAsync(IReadOnlyList<string> sessionIds, string methodName, object?[] args, CancellationToken cancellationToken = default)
         {
             List<Task> tasks = [];
-            var message = new InvocationMessage(methodName, args);
+            var message = CreateSerializedInvocationMessage(methodName, args);
 
             foreach (var sessionId in sessionIds)
             {
@@ -138,7 +139,7 @@ namespace LogicalServer.Core
                 return Task.CompletedTask;
 
             List<Task> tasks = [];
-            var message = new InvocationMessage(methodName, args);
+            var message = CreateSerializedInvocationMessage(methodName, args);
 
             SendToSessionConnections(session.Connections, null, ref tasks, ref message, cancellationToken);
 
@@ -155,7 +156,7 @@ namespace LogicalServer.Core
                 return Task.CompletedTask;
 
             List<Task> tasks = [];
-            var message = new InvocationMessage(methodName, args);
+            var message = CreateSerializedInvocationMessage(methodName, args);
 
             SendToSessionConnections(session.Connections, connection => !excludedConnectionIds.Contains(connection.Id), ref tasks, ref message, cancellationToken);
 
@@ -165,6 +166,8 @@ namespace LogicalServer.Core
         private Task SendToAllConnections(string methodName, object?[] args, Func<HubConnection, bool>? include, CancellationToken cancellationToken = default)
         {
             List<Task> tasks = [];
+
+            var serializedMessage = CreateSerializedInvocationMessage(methodName, args);
 
             foreach (var connection in _connections)
             {
@@ -178,9 +181,7 @@ namespace LogicalServer.Core
                     break;
                 }
 
-                var message = new InvocationMessage(methodName, args);
-
-                var task = connection.WriteAsync(message, cancellationToken);
+                var task = connection.WriteAsync(serializedMessage, cancellationToken);
 
                 if (!task.IsCompletedSuccessfully)
                 {
@@ -204,7 +205,7 @@ namespace LogicalServer.Core
             ConcurrentDictionary<string, HubConnection> connections,
             Func<HubConnection, bool>? include,
             ref List<Task> tasks,
-            ref InvocationMessage message,
+            ref SerializedHubMessage message,
             CancellationToken cancellationToken
             )
         {
@@ -231,6 +232,12 @@ namespace LogicalServer.Core
                     task.GetAwaiter().GetResult();
                 }
             }
+        }
+
+        private static SerializedHubMessage CreateSerializedInvocationMessage(string methodName, object?[] args)
+        {
+            var message = new InvocationMessage(methodName, args);
+            return new SerializedHubMessage(message);
         }
     }
 }
